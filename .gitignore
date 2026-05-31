@@ -1,0 +1,32 @@
+# Git ignore patterns for the Arabic Language Report Bot
+# ──────────────────────────────────────────────────────
+
+# Environment secrets — NEVER commit this
+.env
+
+# SQLite database file
+*.db
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
