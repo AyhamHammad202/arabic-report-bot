@@ -4,15 +4,22 @@ utils.py
 Shared utility helpers used across the bot.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# Baghdad timezone (GMT+3)
+BAGHDAD_TZ = timezone(timedelta(hours=3))
 
 
 def fmt_time(dt: datetime) -> str:
     """
     Format a datetime object into a 12-hour time string with Arabic AM/PM.
+    Converts timezone-aware datetimes to Baghdad time (GMT+3) first.
 
     Example output:  2026-05-31  02:45:30 م
     """
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(BAGHDAD_TZ)
+        
     period = "ص" if dt.hour < 12 else "م"
     return dt.strftime(f"%Y-%m-%d  %I:%M:%S {period}")
 

@@ -26,6 +26,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore_async
 
 from config import FIREBASE_CREDENTIALS, FIREBASE_CREDENTIALS_PATH
+from utils import BAGHDAD_TZ
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ async def save_report(
 
     Returns the submission timestamp.
     """
-    submission_time = datetime.now()
+    submission_time = datetime.now(BAGHDAD_TZ)
     doc_ref = _db.collection(COLLECTION).document(str(telegram_id))
     await doc_ref.set({
         "telegram_id":     telegram_id,
