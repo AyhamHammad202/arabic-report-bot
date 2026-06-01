@@ -24,8 +24,11 @@ if not SUPER_ADMIN_ID:
     raise ValueError("SUPER_ADMIN_ID is not set. Please add it to your .env file.")
 
 
-# ----- Database -----
-DATABASE_PATH: str = os.getenv("DATABASE_PATH", "reports.db")
+# ----- Firebase -----
+# The full service-account JSON is stored in this env variable.
+# For local dev you can point to a file path instead (see .env.example).
+FIREBASE_CREDENTIALS: str = os.getenv("FIREBASE_CREDENTIALS", "")
+FIREBASE_CREDENTIALS_PATH: str = os.getenv("FIREBASE_CREDENTIALS_PATH", "firebase-credentials.json")
 
 # ----- College & Department Mappings -----
 # Maps callback data -> Arabic display name

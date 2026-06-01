@@ -1,42 +1,71 @@
 """
 database.py
 -----------
-All async SQLite database operations using aiosqlite.
+All async Firestore database operations using firebase-admin.
+
+Collection : students_reports
+Document ID: str(telegram_id)   ← one document per student (enforces the
+                                    one-submission rule at the storage level)
+
+Document fields
+---------------
+telegram_id     : int
+full_name       : str
+college         : str
+department      : str
+file_id         : str   (Telegram file_id of the Word document)
+submission_time : datetime
 """
 
+import json
 import logging
 from datetime import datetime
 from typing import Optional
 
-import aiosqlite
+import firebase_admin
+from firebase_admin import credentials, firestore_async
 
-from config import DATABASE_PATH
+from config import FIREBASE_CREDENTIALS, FIREBASE_CREDENTIALS_PATH
 
 logger = logging.getLogger(__name__)
 
+# ──────────────────────────────────────────────
+# Firebase Initialisation  (runs once at import)
+# ──────────────────────────────────────────────
+
+def _init_firebase() -> None:
+    """Initialise the Firebase Admin SDK exactly once."""
+    if firebase_admin._apps:
+        return  # Already initialised
+
+    if FIREBASE_CREDENTIALS:
+        # Cloud deployment: full JSON stored in environment variable
+        cred = credentials.Certificate(json.loads(FIREBASE_CREDENTIALS))
+        logger.info("Firebase: using credentials from FIREBASE_CREDENTIALS env var.")
+    else:
+        # Local development: JSON file on disk
+        cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+        logger.info("Firebase: using credentials from file '%s'.", FIREBASE_CREDENTIALS_PATH)
+
+    firebase_admin.initialize_app(cred)
+    logger.info("Firebase Admin SDK initialised successfully.")
+
+
+_init_firebase()
+_db = firestore_async.client()          # Async Firestore client
+COLLECTION = "students_reports"         # Firestore collection name
+
 
 # ──────────────────────────────────────────────
-# Initialization
+# Initialisation
 # ──────────────────────────────────────────────
 
 async def init_db() -> None:
-    """Create the students_reports table if it does not exist."""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS students_reports (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                telegram_id     INTEGER  NOT NULL,
-                full_name       TEXT     NOT NULL,
-                college         TEXT     NOT NULL,
-                department      TEXT     NOT NULL,
-                file_id         TEXT     NOT NULL,
-                submission_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )
-            """
-        )
-        await db.commit()
-    logger.info("Database initialised at '%s'.", DATABASE_PATH)
+    """
+    No-op for Firestore — collections are created automatically on first write.
+    Kept for API compatibility with the rest of the codebase.
+    """
+    logger.info("Firestore ready. Collection: '%s'", COLLECTION)
 
 
 # ──────────────────────────────────────────────
@@ -51,21 +80,22 @@ async def save_report(
     file_id: str,
 ) -> datetime:
     """
-    Insert a new student report into the database.
+    Save (or overwrite) a student's report.
+    Uses telegram_id as the document ID so there is exactly one document
+    per student, which naturally enforces the one-submission rule.
 
-    Returns the submission timestamp so it can be forwarded to the admin.
+    Returns the submission timestamp.
     """
     submission_time = datetime.now()
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            """
-            INSERT INTO students_reports
-                (telegram_id, full_name, college, department, file_id, submission_time)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (telegram_id, full_name, college, department, file_id, submission_time),
-        )
-        await db.commit()
+    doc_ref = _db.collection(COLLECTION).document(str(telegram_id))
+    await doc_ref.set({
+        "telegram_id":     telegram_id,
+        "full_name":       full_name,
+        "college":         college,
+        "department":      department,
+        "file_id":         file_id,
+        "submission_time": submission_time,
+    })
     logger.info(
         "Saved report: telegram_id=%s | name=%s | college=%s | dept=%s",
         telegram_id, full_name, college, department,
@@ -79,83 +109,74 @@ async def save_report(
 
 async def get_stats() -> dict:
     """
-    Return a statistics dict with totals per department and overall total.
-
-    Structure:
+    Return a statistics dict:
         {
             "total": int,
             "by_department": { dept_arabic_name: count, ... }
         }
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        db.row_factory = aiosqlite.Row
+    by_department: dict[str, int] = {}
+    total = 0
 
-        # Total count
-        cursor = await db.execute("SELECT COUNT(*) AS total FROM students_reports")
-        row = await cursor.fetchone()
-        total = row["total"] if row else 0
+    async for doc in _db.collection(COLLECTION).stream():
+        data = doc.to_dict()
+        total += 1
+        dept = data.get("department", "غير محدد")
+        by_department[dept] = by_department.get(dept, 0) + 1
 
-        # Per-department count
-        cursor = await db.execute(
-            "SELECT department, COUNT(*) AS cnt FROM students_reports GROUP BY department"
-        )
-        rows = await cursor.fetchall()
-
-    by_department = {r["department"]: r["cnt"] for r in rows}
     return {"total": total, "by_department": by_department}
 
 
 async def get_reports_by_department(department_name: str) -> list[dict]:
     """
     Fetch all reports for a given department (Arabic name).
-
     Returns a list of dicts with keys: full_name, file_id, submission_time.
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        cursor = await db.execute(
-            """
-            SELECT full_name, file_id, submission_time
-            FROM students_reports
-            WHERE department = ?
-            ORDER BY submission_time ASC
-            """,
-            (department_name,),
-        )
-        rows = await cursor.fetchall()
-
-    return [dict(r) for r in rows]
+    query = (
+        _db.collection(COLLECTION)
+        .where("department", "==", department_name)
+    )
+    results = []
+    async for doc in query.stream():
+        data = doc.to_dict()
+        results.append({
+            "full_name":       data["full_name"],
+            "file_id":         data["file_id"],
+            "submission_time": data["submission_time"],
+        })
+    # Sort client-side by submission time (avoids requiring a Firestore composite index)
+    results.sort(key=lambda r: r["submission_time"])
+    return results
 
 
 async def get_all_departments() -> list[str]:
-    """Return a distinct list of departments that have at least one submission."""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        cursor = await db.execute(
-            "SELECT DISTINCT department FROM students_reports ORDER BY department"
-        )
-        rows = await cursor.fetchall()
-    return [r["department"] for r in rows]
+    """Return a distinct sorted list of departments that have at least one submission."""
+    depts: set[str] = set()
+    async for doc in _db.collection(COLLECTION).stream():
+        data = doc.to_dict()
+        dept = data.get("department")
+        if dept:
+            depts.add(dept)
+    return sorted(depts)
 
 
 async def get_all_reports() -> list[dict]:
     """
     Fetch every submitted report ordered by submission time (oldest first).
-
-    Returns a list of dicts with keys:
-        full_name, college, department, file_id, submission_time
+    Returns dicts with keys: full_name, college, department, file_id, submission_time.
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        cursor = await db.execute(
-            """
-            SELECT full_name, college, department, file_id, submission_time
-            FROM students_reports
-            ORDER BY submission_time ASC
-            """
-        )
-        rows = await cursor.fetchall()
-    return [dict(r) for r in rows]
+    results = []
+    async for doc in _db.collection(COLLECTION).stream():
+        data = doc.to_dict()
+        results.append({
+            "full_name":       data["full_name"],
+            "college":         data["college"],
+            "department":      data["department"],
+            "file_id":         data["file_id"],
+            "submission_time": data["submission_time"],
+        })
+    results.sort(key=lambda r: r["submission_time"])
+    return results
 
 
 # ──────────────────────────────────────────────
@@ -165,80 +186,77 @@ async def get_all_reports() -> list[dict]:
 async def check_existing_submission(telegram_id: int) -> bool:
     """
     Return True if the student has already submitted a report.
-    Used to enforce the one-submission-per-student rule.
+    Because telegram_id is the document ID, this is a single fast lookup.
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        cursor = await db.execute(
-            "SELECT 1 FROM students_reports WHERE telegram_id = ? LIMIT 1",
-            (telegram_id,),
-        )
-        row = await cursor.fetchone()
-    return row is not None
+    doc = await _db.collection(COLLECTION).document(str(telegram_id)).get()
+    return doc.exists
 
 
 async def get_all_students_brief() -> list[dict]:
     """
-    Fetch a brief list of all submitted students for the superadmin deletion panel.
-
-    Returns a list of dicts with keys: id, telegram_id, full_name, college, department.
+    Fetch a brief list of all submitted students for the superadmin panel.
+    Returns dicts with keys: id, telegram_id, full_name, college, department.
+    The 'id' field equals telegram_id and is used as the superadmin action key.
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        cursor = await db.execute(
-            """
-            SELECT id, telegram_id, full_name, college, department
-            FROM students_reports
-            ORDER BY submission_time ASC
-            """
-        )
-        rows = await cursor.fetchall()
-    return [dict(r) for r in rows]
+    results = []
+    async for doc in _db.collection(COLLECTION).stream():
+        data = doc.to_dict()
+        results.append({
+            "id":          data["telegram_id"],   # used in callback_data
+            "telegram_id": data["telegram_id"],
+            "full_name":   data["full_name"],
+            "college":     data["college"],
+            "department":  data["department"],
+        })
+    results.sort(key=lambda r: r["full_name"])
+    return results
 
 
 async def get_submission_by_id(submission_id: int) -> Optional[dict]:
     """
-    Fetch a single submission row by its primary key.
+    Fetch a single submission by its 'id' (= telegram_id).
     Returns None if not found.
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        cursor = await db.execute(
-            """
-            SELECT id, telegram_id, full_name, college, department, submission_time
-            FROM students_reports
-            WHERE id = ?
-            """,
-            (submission_id,),
-        )
-        row = await cursor.fetchone()
-    return dict(row) if row else None
+    doc = await _db.collection(COLLECTION).document(str(submission_id)).get()
+    if not doc.exists:
+        return None
+    data = doc.to_dict()
+    return {
+        "id":              data["telegram_id"],
+        "telegram_id":     data["telegram_id"],
+        "full_name":       data["full_name"],
+        "college":         data["college"],
+        "department":      data["department"],
+        "submission_time": data["submission_time"],
+    }
 
 
 async def delete_submission_by_id(submission_id: int) -> bool:
     """
-    Delete a submission by primary key.
-    Returns True if a row was actually deleted, False if the ID did not exist.
+    Delete a submission by its 'id' (= telegram_id).
+    Returns True if a document was actually deleted, False if it didn't exist.
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        cursor = await db.execute(
-            "DELETE FROM students_reports WHERE id = ?",
-            (submission_id,),
-        )
-        await db.commit()
-        deleted = cursor.rowcount > 0
-    if deleted:
-        logger.info("Deleted submission id=%s by superadmin.", submission_id)
-    return deleted
+    doc_ref = _db.collection(COLLECTION).document(str(submission_id))
+    doc = await doc_ref.get()
+    if not doc.exists:
+        return False
+    await doc_ref.delete()
+    logger.info("Deleted submission for telegram_id=%s.", submission_id)
+    return True
 
 
 async def delete_all_submissions() -> int:
     """
-    Delete every row in students_reports.
-    Returns the number of rows deleted.
+    Delete every document in the students_reports collection.
+    Returns the number of documents deleted.
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        cursor = await db.execute("DELETE FROM students_reports")
-        await db.commit()
-        count = cursor.rowcount
+    refs = []
+    async for doc in _db.collection(COLLECTION).stream():
+        refs.append(doc.reference)
+
+    for ref in refs:
+        await ref.delete()
+
+    count = len(refs)
     logger.warning("Superadmin deleted ALL %s submissions.", count)
     return count

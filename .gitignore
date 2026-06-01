@@ -1,8 +1,9 @@
 # Git ignore patterns for the Arabic Language Report Bot
 # ──────────────────────────────────────────────────────
 
-# Environment secrets — NEVER commit this
+# Environment secrets — NEVER commit these
 .env
+firebase-credentials.json
 
 # SQLite database file
 *.db
