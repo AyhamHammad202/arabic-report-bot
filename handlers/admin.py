@@ -300,7 +300,7 @@ async def cb_admin_stats(callback: CallbackQuery) -> None:
         await callback.answer("غير مسموح.", show_alert=True)
         return
     await _deliver_stats(callback.message)  # type: ignore[arg-type]
-    await callback.answer()
+    await callback.answer(text="تم تحديث وعرض الإحصائيات")
 
 
 # ──────────────────────────────────────────────
@@ -316,7 +316,7 @@ async def cb_admin_view_depts(callback: CallbackQuery) -> None:
         "اختر القسم الذي تريد استعراض تقاريره:",
         reply_markup=admin_departments_reply_keyboard(),
     )
-    await callback.answer()
+    await callback.answer(text="تم فتح قائمة الأقسام")
 
 
 # ──────────────────────────────────────────────
@@ -329,7 +329,7 @@ async def cb_admin_view_all(callback: CallbackQuery) -> None:
         await callback.answer("غير مسموح.", show_alert=True)
         return
     await _deliver_all_reports(callback.message)  # type: ignore[arg-type]
-    await callback.answer()
+    await callback.answer(text="جاري استعراض جميع ملفات الطلاب")
 
 
 # ──────────────────────────────────────────────
@@ -357,7 +357,7 @@ async def cb_view_department_reports(callback: CallbackQuery) -> None:
             f"لا توجد تقارير مسلّمة بعد لقسم {dept_name}.",
             parse_mode="Markdown",
         )
-        await callback.answer()
+        await callback.answer(text=f"لا توجد تقارير لقسم {dept_name}")
         return
 
     await callback.message.answer(  # type: ignore[union-attr]
@@ -394,7 +394,7 @@ async def cb_view_department_reports(callback: CallbackQuery) -> None:
                 parse_mode="Markdown",
             )
 
-    await callback.answer()
+    await callback.answer(text=f"تم جلب تقارير قسم {dept_name}")
 
 
 # ──────────────────────────────────────────────
@@ -411,4 +411,4 @@ async def cb_admin_back(callback: CallbackQuery) -> None:
         reply_markup=admin_reply_keyboard(),
     )
     await _send_admin_panel(callback.message)  # type: ignore[arg-type]
-    await callback.answer()
+    await callback.answer(text="العودة للقائمة الرئيسية")

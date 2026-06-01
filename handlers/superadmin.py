@@ -87,7 +87,7 @@ async def cb_sa_list_students(callback: CallbackQuery) -> None:
 
     if not students:
         await callback.message.answer("لا يوجد أي تقارير مسجّلة حتى الآن.")  # type: ignore[union-attr]
-        await callback.answer()
+        await callback.answer(text="لا توجد تقارير مسجلة")
         return
 
     await callback.message.answer(  # type: ignore[union-attr]
@@ -96,7 +96,7 @@ async def cb_sa_list_students(callback: CallbackQuery) -> None:
         reply_markup=students_list_keyboard(students),
         parse_mode="Markdown",
     )
-    await callback.answer()
+    await callback.answer(text="تم جلب قائمة الطلاب")
 
 
 # ──────────────────────────────────────────────
@@ -124,7 +124,7 @@ async def cb_sa_view_student(callback: CallbackQuery) -> None:
         await callback.message.answer(  # type: ignore[union-attr]
             "لم يتم العثور على هذا التقرير. ربما تم حذفه مسبقاً."
         )
-        await callback.answer()
+        await callback.answer(text="التقرير غير موجود")
         return
 
     # Build detail message
@@ -153,7 +153,7 @@ async def cb_sa_view_student(callback: CallbackQuery) -> None:
         reply_markup=builder.as_markup(),
         parse_mode="Markdown",
     )
-    await callback.answer()
+    await callback.answer(text=f"تفاصيل الطالب {submission['full_name']}")
 
 
 
@@ -172,7 +172,7 @@ async def cb_sa_delete_one(callback: CallbackQuery) -> None:
 
     if not students:
         await callback.message.answer("لا يوجد أي تقارير لحذفها.")  # type: ignore[union-attr]
-        await callback.answer()
+        await callback.answer(text="لا توجد تقارير لحذفها")
         return
 
     await callback.message.answer(  # type: ignore[union-attr]
@@ -182,7 +182,7 @@ async def cb_sa_delete_one(callback: CallbackQuery) -> None:
         reply_markup=students_delete_keyboard(students),
         parse_mode="Markdown",
     )
-    await callback.answer()
+    await callback.answer(text="تم فتح قائمة حذف التقارير")
 
 
 # ──────────────────────────────────────────────
@@ -207,7 +207,7 @@ async def cb_sa_del_ask(callback: CallbackQuery) -> None:
         await callback.message.answer(  # type: ignore[union-attr]
             "لم يتم العثور على هذا التقرير. ربما تم حذفه مسبقاً."
         )
-        await callback.answer()
+        await callback.answer(text="التقرير غير موجود")
         return
 
     await callback.message.answer(  # type: ignore[union-attr]
@@ -221,7 +221,7 @@ async def cb_sa_del_ask(callback: CallbackQuery) -> None:
         reply_markup=delete_confirm_keyboard(submission_id),
         parse_mode="Markdown",
     )
-    await callback.answer()
+    await callback.answer(text="تأكيد طلب حذف التقرير")
 
 
 # ──────────────────────────────────────────────
@@ -252,7 +252,7 @@ async def cb_sa_del_exec(callback: CallbackQuery) -> None:
         await callback.message.answer(  # type: ignore[union-attr]
             "التقرير غير موجود — ربما تم حذفه مسبقاً."
         )
-        await callback.answer()
+        await callback.answer(text="التقرير غير موجود")
         return
 
     deleted = await delete_submission_by_id(submission_id)
@@ -261,7 +261,7 @@ async def cb_sa_del_exec(callback: CallbackQuery) -> None:
         await callback.message.answer(  # type: ignore[union-attr]
             "فشل الحذف. يرجى المحاولة مرة أخرى."
         )
-        await callback.answer()
+        await callback.answer(text="فشلت عملية الحذف")
         return
 
     # ── Confirm to superadmin ──
@@ -296,7 +296,7 @@ async def cb_sa_del_exec(callback: CallbackQuery) -> None:
             "تم الحذف لكن فشل إرسال الإشعار للطالب (ربما لم يبدأ محادثة مع البوت)."
         )
 
-    await callback.answer()
+    await callback.answer(text="تم حذف التقرير بنجاح")
 
 
 # ──────────────────────────────────────────────
@@ -321,7 +321,7 @@ async def cb_sa_delete_all_ask(callback: CallbackQuery) -> None:
         reply_markup=delete_all_confirm_keyboard(),
         parse_mode="Markdown",
     )
-    await callback.answer()
+    await callback.answer(text="تأكيد حذف جميع التقارير")
 
 
 # ──────────────────────────────────────────────
@@ -343,7 +343,7 @@ async def cb_sa_delete_all_exec(callback: CallbackQuery) -> None:
         parse_mode="Markdown",
     )
     logger.warning("Superadmin wiped all %s submissions.", count)
-    await callback.answer()
+    await callback.answer(text="تم مسح كافة البيانات بنجاح")
 
 
 # ──────────────────────────────────────────────
@@ -365,4 +365,4 @@ async def cb_sa_cancel(callback: CallbackQuery) -> None:
         reply_markup=superadmin_main_keyboard(),
         parse_mode="Markdown",
     )
-    await callback.answer()
+    await callback.answer(text="تم الإلغاء والرجوع")

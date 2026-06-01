@@ -125,7 +125,7 @@ async def handle_college(callback: CallbackQuery, state: FSMContext) -> None:
         "ممتاز. الآن اختر قسمك الأكاديمي:",
         reply_markup=department_keyboard(college_callback),
     )
-    await callback.answer()
+    await callback.answer(text=f"تم اختيار {college_name}")
 
 
 # ──────────────────────────────────────────────
@@ -144,7 +144,7 @@ async def handle_department(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.message.edit_text(  # type: ignore[union-attr]
         "خطوة أخيرة: يرجى إرسال تقرير اللغة العربية بصيغة (Word) حصراً. (.doc أو .docx)"
     )
-    await callback.answer()
+    await callback.answer(text=f"تم اختيار قسم {dept_name}")
 
 
 # ──────────────────────────────────────────────
