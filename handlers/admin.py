@@ -50,8 +50,8 @@ async def _send_admin_panel(message: Message) -> None:
     stats  = await get_stats()
     total  = stats["total"]
     await message.answer(
-        f"🗂 *لوحة تحكم التقارير*\n\n"
-        f"📈 إجمالي التقارير المستلمة حتى الآن: *{total}*\n\n"
+        f"*لوحة تحكم التقارير*\n\n"
+        f"إجمالي التقارير المستلمة حتى الآن: *{total}*\n\n"
         "اختر ما تريد من الخيارات:",
         reply_markup=admin_main_inline_keyboard(),
         parse_mode="Markdown",
@@ -104,37 +104,37 @@ async def cmd_admin(message: Message) -> None:
 # These fire when the admin taps a bottom-keyboard button
 # ──────────────────────────────────────────────
 
-@router.message(F.text == "🏠 القائمة الرئيسية")
+@router.message(F.text == "القائمة الرئيسية")
 async def reply_main_menu(message: Message) -> None:
     if not _is_admin(message.from_user.id):  # type: ignore[union-attr]
         return
     await _send_admin_panel(message)
 
 
-@router.message(F.text == "📊 الإحصائيات")
+@router.message(F.text == "الإحصائيات")
 async def reply_stats(message: Message) -> None:
     if not _is_admin(message.from_user.id):  # type: ignore[union-attr]
         return
     await _deliver_stats(message)
 
 
-@router.message(F.text == "📁 ملفات الأقسام")
+@router.message(F.text == "ملفات الأقسام")
 async def reply_view_depts(message: Message) -> None:
     if not _is_admin(message.from_user.id):  # type: ignore[union-attr]
         return
     await message.answer(
-        "🏛 اختر القسم الذي تريد استعراض تقاريره:",
+        "اختر القسم الذي تريد استعراض تقاريره:",
         reply_markup=admin_departments_reply_keyboard(),
     )
 
 
 # ── College-header buttons (visual labels, not actionable) ──
-@router.message(F.text.in_({"🏛 كلية التميز", "🤖 كلية الذكاء الاصطناعي"}))
+@router.message(F.text.in_({"كلية التميز", "كلية الذكاء الاصطناعي"}))
 async def reply_college_header(message: Message) -> None:
     """The college-name rows are visual separators; remind admin to tap a department."""
     if not _is_admin(message.from_user.id):  # type: ignore[union-attr]
         return
-    await message.answer("⬇️ اختر أحد الأقسام الموجودة أسفله.")
+    await message.answer("اختر أحد الأقسام الموجودة أسفله.")
 
 
 # ── Department name taps (reply keyboard) ──
@@ -148,18 +148,18 @@ async def reply_dept_selected(message: Message) -> None:
 
 
 # ── Back button (dept keyboard → main admin keyboard) ──
-@router.message(F.text == "🔙 رجوع للقائمة الرئيسية")
+@router.message(F.text == "رجوع للقائمة الرئيسية")
 async def reply_back_to_main(message: Message) -> None:
     if not _is_admin(message.from_user.id):  # type: ignore[union-attr]
         return
     await message.answer(
-        "🏠 القائمة الرئيسية:",
+        "القائمة الرئيسية:",
         reply_markup=admin_reply_keyboard(),
     )
     await _send_admin_panel(message)
 
 
-@router.message(F.text == "📋 جميع ملفات الطلاب")
+@router.message(F.text == "جميع ملفات الطلاب")
 async def reply_view_all(message: Message) -> None:
     if not _is_admin(message.from_user.id):  # type: ignore[union-attr]
         return
@@ -180,21 +180,21 @@ async def _deliver_stats(target: Message) -> None:
         return by_dept.get(dept_name, 0)
 
     text = (
-        "📊 *إحصائيات تسليم التقارير الحالية:*\n\n"
+        "*إحصائيات تسليم التقارير الحالية:*\n\n"
 
-        "🏛 *كلية التميز:*\n"
-        f"  ‣ نظم المعلومات التطبيقية: *{count('نظم المعلومات التطبيقية')}*\n"
-        f"  ‣ علم البيانات: *{count('علم البيانات')}*\n"
-        f"  ‣ الفلسفة وعلم الاجتماع: *{count('الفلسفة وعلم الاجتماع')}*\n"
-        f"  ‣ المحاسبة والمصارف: *{count('المحاسبة والمصارف')}*\n"
-        f"  ‣ إدارة الأعمال والتجارة الإلكترونية: *{count('إدارة الأعمال والتجارة الإلكترونية')}*\n\n"
+        "*كلية التميز:*\n"
+        f"  - نظم المعلومات التطبيقية: *{count('نظم المعلومات التطبيقية')}*\n"
+        f"  - علم البيانات: *{count('علم البيانات')}*\n"
+        f"  - الفلسفة وعلم الاجتماع: *{count('الفلسفة وعلم الاجتماع')}*\n"
+        f"  - المحاسبة والمصارف: *{count('المحاسبة والمصارف')}*\n"
+        f"  - إدارة الأعمال والتجارة الإلكترونية: *{count('إدارة الأعمال والتجارة الإلكترونية')}*\n\n"
 
-        "🤖 *كلية الذكاء الاصطناعي:*\n"
-        f"  ‣ التطبيقات الهندسية: *{count('التطبيقات الهندسية')}*\n"
-        f"  ‣ البيانات الضخمة: *{count('البيانات الضخمة')}*\n"
-        f"  ‣ التطبيقات الطبية الحيوية: *{count('التطبيقات الطبية الحيوية')}*\n\n"
+        "*كلية الذكاء الاصطناعي:*\n"
+        f"  - التطبيقات الهندسية: *{count('التطبيقات الهندسية')}*\n"
+        f"  - البيانات الضخمة: *{count('البيانات الضخمة')}*\n"
+        f"  - التطبيقات الطبية الحيوية: *{count('التطبيقات الطبية الحيوية')}*\n\n"
 
-        f"📈 *إجمالي التقارير المستلمة:* *{total}*"
+        f"*إجمالي التقارير المستلمة:* *{total}*"
     )
     await target.answer(text, parse_mode="Markdown")
 
@@ -204,21 +204,21 @@ async def _deliver_all_reports(target: Message) -> None:
     reports = await get_all_reports()
 
     if not reports:
-        await target.answer("📭 لا توجد تقارير مسلّمة بعد.")
+        await target.answer("لا توجد تقارير مسلّمة بعد.")
         return
 
     await target.answer(
-        f"📋 *جميع ملفات الطلاب المستلمة*\n📦 الإجمالي: *{len(reports)}* تقرير",
+        f"*جميع ملفات الطلاب المستلمة*\nالإجمالي: *{len(reports)}* تقرير",
         parse_mode="Markdown",
     )
 
     for idx, report in enumerate(reports, start=1):
         caption = (
-            f"*#{idx}*\n"
-            f"👤 *الاسم:* {report['full_name']}\n"
-            f"🏫 *الكلية:* {report['college']}\n"
-            f"🎓 *القسم:* {report['department']}\n"
-            f"⏰ *وقت التسليم:* {fmt_time_str(report['submission_time'])}"
+            f"تقرير رقم {idx}\n"
+            f"الاسم: {report['full_name']}\n"
+            f"الكلية: {report['college']}\n"
+            f"القسم: {report['department']}\n"
+            f"وقت التسليم: {fmt_time_str(report['submission_time'])}"
         )
         try:
             await target.bot.send_document(  # type: ignore[union-attr]
@@ -231,6 +231,16 @@ async def _deliver_all_reports(target: Message) -> None:
             logger.error(
                 "Failed to send report #%s (%s) to admin: %s",
                 idx, report["full_name"], exc,
+            )
+            # Fallback to text message if document fails to send (e.g. invalid file_id)
+            fallback_text = (
+                f"{caption}\n"
+                f"(ملاحظة: تعذر إرسال الملف المرفق)"
+            )
+            await target.bot.send_message(  # type: ignore[union-attr]
+                chat_id=target.chat.id,
+                text=fallback_text,
+                parse_mode="Markdown",
             )
 
 
@@ -240,21 +250,21 @@ async def _deliver_dept_reports(target: Message, dept_name: str) -> None:
 
     if not reports:
         await target.answer(
-            f"📭 لا توجد تقارير مسلّمة بعد لقسم *{dept_name}*.",
+            f"لا توجد تقارير مسلّمة بعد لقسم {dept_name}.",
             parse_mode="Markdown",
         )
         return
 
     await target.answer(
-        f"📂 *تقارير قسم {dept_name}*\n📦 العدد: *{len(reports)}*",
+        f"*تقارير قسم {dept_name}*\nالعدد الكلي: *{len(reports)}*",
         parse_mode="Markdown",
     )
 
     for idx, report in enumerate(reports, start=1):
         caption = (
-            f"*#{idx}*\n"
-            f"👤 *الاسم:* {report['full_name']}\n"
-            f"⏰ *وقت التسليم:* {fmt_time_str(report['submission_time'])}"
+            f"تقرير رقم {idx}\n"
+            f"الاسم: {report['full_name']}\n"
+            f"وقت التسليم: {fmt_time_str(report['submission_time'])}"
         )
         try:
             await target.bot.send_document(  # type: ignore[union-attr]
@@ -267,6 +277,16 @@ async def _deliver_dept_reports(target: Message, dept_name: str) -> None:
             logger.error(
                 "Failed to send report #%s (%s) to admin: %s",
                 idx, report["full_name"], exc,
+            )
+            # Fallback to text message
+            fallback_text = (
+                f"{caption}\n"
+                f"(ملاحظة: تعذر إرسال الملف المرفق)"
+            )
+            await target.bot.send_message(  # type: ignore[union-attr]
+                chat_id=target.chat.id,
+                text=fallback_text,
+                parse_mode="Markdown",
             )
 
 
@@ -293,7 +313,7 @@ async def cb_admin_view_depts(callback: CallbackQuery) -> None:
         await callback.answer("غير مسموح.", show_alert=True)
         return
     await callback.message.answer(  # type: ignore[union-attr]
-        "🏛 اختر القسم الذي تريد استعراض تقاريره:",
+        "اختر القسم الذي تريد استعراض تقاريره:",
         reply_markup=admin_departments_reply_keyboard(),
     )
     await callback.answer()
@@ -334,22 +354,22 @@ async def cb_view_department_reports(callback: CallbackQuery) -> None:
 
     if not reports:
         await callback.message.answer(  # type: ignore[union-attr]
-            f"📭 لا توجد تقارير مسلّمة بعد لقسم *{dept_name}*.",
+            f"لا توجد تقارير مسلّمة بعد لقسم {dept_name}.",
             parse_mode="Markdown",
         )
         await callback.answer()
         return
 
     await callback.message.answer(  # type: ignore[union-attr]
-        f"📂 *تقارير قسم {dept_name}*\n📦 العدد: *{len(reports)}*",
+        f"تقارير قسم {dept_name}\nالعدد الكلي: *{len(reports)}*",
         parse_mode="Markdown",
     )
 
     for idx, report in enumerate(reports, start=1):
         caption = (
-            f"*#{idx}*\n"
-            f"👤 *الاسم:* {report['full_name']}\n"
-            f"⏰ *وقت التسليم:* {fmt_time_str(report['submission_time'])}"
+            f"تقرير رقم {idx}\n"
+            f"الاسم: {report['full_name']}\n"
+            f"وقت التسليم: {fmt_time_str(report['submission_time'])}"
         )
         try:
             await callback.message.bot.send_document(  # type: ignore[union-attr]
@@ -362,6 +382,16 @@ async def cb_view_department_reports(callback: CallbackQuery) -> None:
             logger.error(
                 "Failed to send report #%s (%s) to admin: %s",
                 idx, report["full_name"], exc,
+            )
+            # Fallback to text message
+            fallback_text = (
+                f"{caption}\n"
+                f"(ملاحظة: تعذر إرسال الملف المرفق)"
+            )
+            await callback.message.bot.send_message(  # type: ignore[union-attr]
+                chat_id=callback.from_user.id,
+                text=fallback_text,
+                parse_mode="Markdown",
             )
 
     await callback.answer()
@@ -377,7 +407,7 @@ async def cb_admin_back(callback: CallbackQuery) -> None:
         await callback.answer("غير مسموح.", show_alert=True)
         return
     await callback.message.answer(  # type: ignore[union-attr]
-        "🏠 القائمة الرئيسية:",
+        "القائمة الرئيسية:",
         reply_markup=admin_reply_keyboard(),
     )
     await _send_admin_panel(callback.message)  # type: ignore[arg-type]

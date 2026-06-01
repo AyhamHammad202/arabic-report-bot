@@ -64,9 +64,9 @@ async def cmd_superadmin(message: Message) -> None:
     total = len(students)
 
     await message.answer(
-        f"🛡 *لوحة تحكم المشرف العام*\n\n"
-        f"📦 إجمالي التقارير في قاعدة البيانات: *{total}*\n\n"
-        "⚠️ هذه اللوحة تتيح لك حذف تقارير الطلاب للسماح لهم بإعادة التسليم.",
+        f"*لوحة تحكم المشرف العام*\n\n"
+        f"إجمالي التقارير في قاعدة البيانات: *{total}*\n\n"
+        "هذه اللوحة تتيح لك حذف تقارير الطلاب للسماح لهم بإعادة التسليم.",
         reply_markup=superadmin_main_keyboard(),
         parse_mode="Markdown",
     )
@@ -86,12 +86,12 @@ async def cb_sa_list_students(callback: CallbackQuery) -> None:
     students = await get_all_students_brief()
 
     if not students:
-        await callback.message.answer("📭 لا يوجد أي تقارير مسجّلة حتى الآن.")  # type: ignore[union-attr]
+        await callback.message.answer("لا يوجد أي تقارير مسجّلة حتى الآن.")  # type: ignore[union-attr]
         await callback.answer()
         return
 
     await callback.message.answer(  # type: ignore[union-attr]
-        f"📋 *قائمة الطلاب المسجّلين* — الإجمالي: *{len(students)}* طالب\n"
+        f"*قائمة الطلاب المسجّلين* — الإجمالي: *{len(students)}* طالب\n"
         "_اضغط على اسم أي طالب لعرض تفاصيله كاملة:_",
         reply_markup=students_list_keyboard(students),
         parse_mode="Markdown",
@@ -122,7 +122,7 @@ async def cb_sa_view_student(callback: CallbackQuery) -> None:
     submission = await get_submission_by_id(submission_id)
     if not submission:
         await callback.message.answer(  # type: ignore[union-attr]
-            "⚠️ لم يتم العثور على هذا التقرير. ربما تم حذفه مسبقاً."
+            "لم يتم العثور على هذا التقرير. ربما تم حذفه مسبقاً."
         )
         await callback.answer()
         return
@@ -143,13 +143,13 @@ async def cb_sa_view_student(callback: CallbackQuery) -> None:
     )
 
     await callback.message.answer(  # type: ignore[union-attr]
-        f"👤 *تفاصيل الطالب*\n\n"
-        f"📛 *رقم التسجيل:* `#{submission['id']}`\n"
-        f"👤 *الاسم:* {submission['full_name']}\n"
-        f"🏫 *الكلية:* {submission['college']}\n"
-        f"🎓 *القسم:* {submission['department']}\n"
-        f"🔑 *معرّف تيليغرام:* `{submission['telegram_id']}`\n"
-        f"⏰ *وقت التسليم:* {fmt_time_str(submission['submission_time'])}\n",
+        f"*تفاصيل الطالب*\n\n"
+        f"رقم التسجيل: `#{submission['id']}`\n"
+        f"الاسم: {submission['full_name']}\n"
+        f"الكلية: {submission['college']}\n"
+        f"القسم: {submission['department']}\n"
+        f"معرّف تيليغرام: `{submission['telegram_id']}`\n"
+        f"وقت التسليم: {fmt_time_str(submission['submission_time'])}\n",
         reply_markup=builder.as_markup(),
         parse_mode="Markdown",
     )
@@ -171,12 +171,12 @@ async def cb_sa_delete_one(callback: CallbackQuery) -> None:
     students = await get_all_students_brief()
 
     if not students:
-        await callback.message.answer("📭 لا يوجد أي تقارير لحذفها.")  # type: ignore[union-attr]
+        await callback.message.answer("لا يوجد أي تقارير لحذفها.")  # type: ignore[union-attr]
         await callback.answer()
         return
 
     await callback.message.answer(  # type: ignore[union-attr]
-        f"🗑 *اختر الطالب الذي تريد حذف تقريره:*\n"
+        f"*اختر الطالب الذي تريد حذف تقريره:*\n"
         f"_(سيتم إخطاره بإمكانية إعادة التسليم)_\n\n"
         f"العدد الكلي: *{len(students)}* طالب",
         reply_markup=students_delete_keyboard(students),
@@ -205,17 +205,17 @@ async def cb_sa_del_ask(callback: CallbackQuery) -> None:
     submission = await get_submission_by_id(submission_id)
     if not submission:
         await callback.message.answer(  # type: ignore[union-attr]
-            "⚠️ لم يتم العثور على هذا التقرير. ربما تم حذفه مسبقاً."
+            "لم يتم العثور على هذا التقرير. ربما تم حذفه مسبقاً."
         )
         await callback.answer()
         return
 
     await callback.message.answer(  # type: ignore[union-attr]
-        f"⚠️ *تأكيد الحذف*\n\n"
-        f"👤 *الاسم:* {submission['full_name']}\n"
-        f"🎓 *القسم:* {submission['department']}\n"
-        f"🏫 *الكلية:* {submission['college']}\n"
-        f"⏰ *وقت التسليم:* {fmt_time_str(submission['submission_time'])}\n\n"
+        f"*تأكيد الحذف*\n\n"
+        f"الاسم: {submission['full_name']}\n"
+        f"القسم: {submission['department']}\n"
+        f"الكلية: {submission['college']}\n"
+        f"وقت التسليم: {fmt_time_str(submission['submission_time'])}\n\n"
         f"هل أنت متأكد من حذف هذا التقرير؟\n"
         f"_سيتم إخطار الطالب بأنه يستطيع إعادة التسليم._",
         reply_markup=delete_confirm_keyboard(submission_id),
@@ -250,7 +250,7 @@ async def cb_sa_del_exec(callback: CallbackQuery) -> None:
     submission = await get_submission_by_id(submission_id)
     if not submission:
         await callback.message.answer(  # type: ignore[union-attr]
-            "⚠️ التقرير غير موجود — ربما تم حذفه مسبقاً."
+            "التقرير غير موجود — ربما تم حذفه مسبقاً."
         )
         await callback.answer()
         return
@@ -259,15 +259,15 @@ async def cb_sa_del_exec(callback: CallbackQuery) -> None:
 
     if not deleted:
         await callback.message.answer(  # type: ignore[union-attr]
-            "❌ فشل الحذف. يرجى المحاولة مرة أخرى."
+            "فشل الحذف. يرجى المحاولة مرة أخرى."
         )
         await callback.answer()
         return
 
     # ── Confirm to superadmin ──
     await callback.message.answer(  # type: ignore[union-attr]
-        f"✅ *تم حذف تقرير الطالب بنجاح:*\n\n"
-        f"👤 {submission['full_name']} — {submission['department']}",
+        f"*تم حذف تقرير الطالب بنجاح:*\n\n"
+        f"{submission['full_name']} — {submission['department']}",
         parse_mode="Markdown",
     )
 
@@ -276,7 +276,7 @@ async def cb_sa_del_exec(callback: CallbackQuery) -> None:
         await callback.message.bot.send_message(  # type: ignore[union-attr]
             chat_id=submission["telegram_id"],
             text=(
-                "📢 *إشعار مهم:*\n\n"
+                "إشعار مهم:\n\n"
                 "لقد قام الأستاذ بإعادة ضبط تقريرك، ويمكنك الآن إعادة تسليم "
                 "تقرير مادة اللغة العربية.\n\n"
                 "اضغط /start للبدء من جديد."
@@ -293,7 +293,7 @@ async def cb_sa_del_exec(callback: CallbackQuery) -> None:
             submission["telegram_id"], exc,
         )
         await callback.message.answer(  # type: ignore[union-attr]
-            "⚠️ تم الحذف لكن فشل إرسال الإشعار للطالب (ربما لم يبدأ محادثة مع البوت)."
+            "تم الحذف لكن فشل إرسال الإشعار للطالب (ربما لم يبدأ محادثة مع البوت)."
         )
 
     await callback.answer()
@@ -314,9 +314,9 @@ async def cb_sa_delete_all_ask(callback: CallbackQuery) -> None:
     count = len(students)
 
     await callback.message.answer(  # type: ignore[union-attr]
-        f"🛡 *تحذير: حذف جميع التقارير*\n\n"
+        f"*تحذير: حذف جميع التقارير*\n\n"
         f"سيتم حذف *{count}* تقرير من قاعدة البيانات بشكل نهائي.\n"
-        f"⚠️ *هذا الإجراء لا يمكن التراجع عنه.*\n\n"
+        f"هذا الإجراء لا يمكن التراجع عنه.\n\n"
         f"هل أنت متأكد تماماً؟",
         reply_markup=delete_all_confirm_keyboard(),
         parse_mode="Markdown",
@@ -338,8 +338,8 @@ async def cb_sa_delete_all_exec(callback: CallbackQuery) -> None:
     count = await delete_all_submissions()
 
     await callback.message.answer(  # type: ignore[union-attr]
-        f"✅ *تم حذف جميع التقارير بنجاح.*\n"
-        f"🗑 عدد السجلات المحذوفة: *{count}*",
+        f"*تم حذف جميع التقارير بنجاح.*\n"
+        f"عدد السجلات المحذوفة: *{count}*",
         parse_mode="Markdown",
     )
     logger.warning("Superadmin wiped all %s submissions.", count)
@@ -359,9 +359,9 @@ async def cb_sa_cancel(callback: CallbackQuery) -> None:
 
     students = await get_all_students_brief()
     await callback.message.answer(  # type: ignore[union-attr]
-        f"↩️ تم الإلغاء.\n\n"
-        f"🛡 *لوحة تحكم المشرف العام*\n"
-        f"📦 إجمالي التقارير: *{len(students)}*",
+        f"تم الإلغاء.\n\n"
+        f"*لوحة تحكم المشرف العام*\n"
+        f"إجمالي التقارير: *{len(students)}*",
         reply_markup=superadmin_main_keyboard(),
         parse_mode="Markdown",
     )

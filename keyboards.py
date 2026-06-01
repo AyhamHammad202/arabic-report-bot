@@ -24,8 +24,8 @@ def college_keyboard() -> InlineKeyboardMarkup:
     """Inline keyboard to choose between the two colleges."""
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text="🏫 كلية التميز",               callback_data="college_excellence"),
-        InlineKeyboardButton(text="🤖 كلية الذكاء الاصطناعي",  callback_data="college_ai"),
+        InlineKeyboardButton(text="كلية التميز",               callback_data="college_excellence"),
+        InlineKeyboardButton(text="كلية الذكاء الاصطناعي",  callback_data="college_ai"),
     )
     return builder.as_markup()
 
@@ -55,12 +55,12 @@ def admin_reply_keyboard() -> ReplyKeyboardMarkup:
     """
     builder = ReplyKeyboardBuilder()
     builder.row(
-        KeyboardButton(text="📊 الإحصائيات"),
-        KeyboardButton(text="📁 ملفات الأقسام"),
+        KeyboardButton(text="الإحصائيات"),
+        KeyboardButton(text="ملفات الأقسام"),
     )
     builder.row(
-        KeyboardButton(text="📋 جميع ملفات الطلاب"),
-        KeyboardButton(text="🏠 القائمة الرئيسية"),
+        KeyboardButton(text="جميع ملفات الطلاب"),
+        KeyboardButton(text="القائمة الرئيسية"),
     )
     return builder.as_markup(resize_keyboard=True, is_persistent=True)
 
@@ -78,13 +78,13 @@ def admin_main_inline_keyboard() -> InlineKeyboardMarkup:
     """Main admin panel inline keyboard."""
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text="📊 عرض الإحصائيات العامة",    callback_data="admin_stats"),
+        InlineKeyboardButton(text="عرض الإحصائيات العامة",    callback_data="admin_stats"),
     )
     builder.row(
-        InlineKeyboardButton(text="📁 استعراض ملفات الأقسام",    callback_data="admin_view_depts"),
+        InlineKeyboardButton(text="استعراض ملفات الأقسام",    callback_data="admin_view_depts"),
     )
     builder.row(
-        InlineKeyboardButton(text="📋 عرض جميع ملفات الطلاب",   callback_data="admin_view_all"),
+        InlineKeyboardButton(text="عرض جميع ملفات الطلاب",   callback_data="admin_view_all"),
     )
     return builder.as_markup()
 
@@ -97,7 +97,7 @@ def admin_departments_reply_keyboard() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
 
     # ── كلية التميز ──
-    builder.row(KeyboardButton(text="🏛 كلية التميز"))          # section header (non-functional label)
+    builder.row(KeyboardButton(text="كلية التميز"))          # section header (non-functional label)
     builder.row(
         KeyboardButton(text="نظم المعلومات التطبيقية"),
         KeyboardButton(text="علم البيانات"),
@@ -111,7 +111,7 @@ def admin_departments_reply_keyboard() -> ReplyKeyboardMarkup:
     )
 
     # ── كلية الذكاء الاصطناعي ──
-    builder.row(KeyboardButton(text="🤖 كلية الذكاء الاصطناعي"))  # section header
+    builder.row(KeyboardButton(text="كلية الذكاء الاصطناعي"))  # section header
     builder.row(
         KeyboardButton(text="التطبيقات الهندسية"),
         KeyboardButton(text="البيانات الضخمة"),
@@ -121,7 +121,7 @@ def admin_departments_reply_keyboard() -> ReplyKeyboardMarkup:
     )
 
     # ── Back ──
-    builder.row(KeyboardButton(text="🔙 رجوع للقائمة الرئيسية"))
+    builder.row(KeyboardButton(text="رجوع للقائمة الرئيسية"))
 
     return builder.as_markup(resize_keyboard=True, is_persistent=True)
 
@@ -142,13 +142,13 @@ def superadmin_main_keyboard() -> InlineKeyboardMarkup:
     """Main superadmin panel inline keyboard."""
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text="🗑 حذف تقرير طالب",       callback_data="sa_delete_one"),
+        InlineKeyboardButton(text="حذف تقرير طالب",       callback_data="sa_delete_one"),
     )
     builder.row(
-        InlineKeyboardButton(text="🛡 حذف جميع التقارير",      callback_data="sa_delete_all_ask"),
+        InlineKeyboardButton(text="حذف جميع التقارير",      callback_data="sa_delete_all_ask"),
     )
     builder.row(
-        InlineKeyboardButton(text="📋 عرض قائمة الطلاب",      callback_data="sa_list_students"),
+        InlineKeyboardButton(text="عرض قائمة الطلاب",      callback_data="sa_list_students"),
     )
     return builder.as_markup()
 
@@ -161,7 +161,7 @@ def students_delete_keyboard(students: list[dict]) -> InlineKeyboardMarkup:
     """
     builder = InlineKeyboardBuilder()
     for student in students:
-        label = f"🗑 {student['full_name']}  —  {student['department']}"
+        label = f"{student['full_name']}  —  {student['department']}"
         builder.row(
             InlineKeyboardButton(
                 text=label,
@@ -169,7 +169,7 @@ def students_delete_keyboard(students: list[dict]) -> InlineKeyboardMarkup:
             )
         )
     builder.row(
-        InlineKeyboardButton(text="❌ إلغاء", callback_data="sa_cancel")
+        InlineKeyboardButton(text="إلغاء", callback_data="sa_cancel")
     )
     return builder.as_markup()
 
@@ -182,7 +182,7 @@ def students_list_keyboard(students: list[dict]) -> InlineKeyboardMarkup:
     """
     builder = InlineKeyboardBuilder()
     for student in students:
-        label = f"👤 {student['full_name']}  —  {student['department']}"
+        label = f"{student['full_name']}  —  {student['department']}"
         builder.row(
             InlineKeyboardButton(
                 text=label,
@@ -190,7 +190,7 @@ def students_list_keyboard(students: list[dict]) -> InlineKeyboardMarkup:
             )
         )
     builder.row(
-        InlineKeyboardButton(text="❌ إلغاء", callback_data="sa_cancel")
+        InlineKeyboardButton(text="إلغاء", callback_data="sa_cancel")
     )
     return builder.as_markup()
 
@@ -200,11 +200,11 @@ def delete_confirm_keyboard(submission_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
-            text="✅ نعم، احذف التقرير",
+            text="نعم، احذف التقرير",
             callback_data=f"sa_del_exec_{submission_id}",
         ),
         InlineKeyboardButton(
-            text="❌ إلغاء",
+            text="إلغاء",
             callback_data="sa_cancel",
         ),
     )
@@ -216,11 +216,11 @@ def delete_all_confirm_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
-            text="✅ نعم، احذف الكل",
+            text="نعم، احذف الكل",
             callback_data="sa_delete_all_exec",
         ),
         InlineKeyboardButton(
-            text="❌ إلغاء",
+            text="إلغاء",
             callback_data="sa_cancel",
         ),
     )
