@@ -28,12 +28,12 @@ from states import ReportForm
 logger = logging.getLogger(__name__)
 router = Router(name="student")
 
-# Support contact message — reused in /help and rejection messages
+# Support contact message — explicit links preserve underscores in usernames
 SUPPORT_TEXT = (
-    "📞 *للتواصل مع الدعم:*\n"
-    "• @a_iqi202\n"
-    "• @n_zankana\n"
-    "_يمكنك مراسلتنا مباشرة عبر الرسائل الخاصة._"
+    "📞 <b>للتواصل مع الدعم:</b>\n"
+    "• <a href=\"https://t.me/a_iqi202\">@a_iqi202</a>\n"
+    "• <a href=\"https://t.me/n_zankana\">@n_zankana</a>\n"
+    "<i>يمكنك مراسلتنا مباشرة عبر الرسائل الخاصة.</i>"
 )
 
 
@@ -78,10 +78,10 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
 async def cmd_help(message: Message) -> None:
     """Show support contacts to anyone who needs help."""
     await message.answer(
-        "🚨 *هل تواجه مشكلة؟*\n\n"
+        "🚨 <b>هل تواجه مشكلة؟</b>\n\n"
         "لا تقلق، نحن هنا لمساعدتك! تواصل معنا مباشرة:\n\n"
         + SUPPORT_TEXT,
-        parse_mode="Markdown",
+        parse_mode="HTML",
     )
 
 
@@ -183,7 +183,7 @@ async def handle_report(message: Message, state: FSMContext) -> None:
             "⚠️ لقد قمت بتسليم تقريرك مسبقاً ولا يمكنك التسليم مرة أخرى.\n\n"
             "إذا كنت بحاجة لإعادة التسليم، تواصل مع الدعم:\n\n"
             + SUPPORT_TEXT,
-            parse_mode="Markdown",
+            parse_mode="HTML",
         )
         return
 
