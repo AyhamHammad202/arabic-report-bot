@@ -131,7 +131,7 @@ async def get_stats() -> dict:
 async def get_reports_by_department(department_name: str) -> list[dict]:
     """
     Fetch all reports for a given department (Arabic name).
-    Returns a list of dicts with keys: full_name, file_id, submission_time.
+    Returns a list of dicts with keys: full_name, college, department, file_id, submission_time.
     """
     query = (
         _db.collection(COLLECTION)
@@ -142,6 +142,8 @@ async def get_reports_by_department(department_name: str) -> list[dict]:
         data = doc.to_dict()
         results.append({
             "full_name":       data["full_name"],
+            "college":         data.get("college", ""),
+            "department":      data.get("department", ""),
             "file_id":         data["file_id"],
             "submission_time": data["submission_time"],
         })

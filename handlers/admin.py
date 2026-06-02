@@ -178,13 +178,14 @@ async def safe_send_report(bot, chat_id: int, report: dict, idx: int) -> None:
     Handles rate limits (TelegramRetryAfter) by sleeping and retrying.
     Handles bad file IDs by falling back to a text message.
     """
-    college_str = f"الكلية: {report['college']}\n" if "college" in report else ""
+    college_str = f"الكلية: {report.get('college')}\n" if report.get('college') else ""
+    dept_str = f"القسم: {report.get('department')}\n" if report.get('department') else ""
     caption = (
         f"التقرير رقم {idx}\n"
-        f"الاسم: {report['full_name']}\n"
-        + college_str +
-        f"القسم: {report['department']}\n"
-        f"وقت التسليم: {fmt_time_str(report['submission_time'])}"
+        f"الاسم: {report.get('full_name', '')}\n"
+        + college_str
+        + dept_str
+        + f"وقت التسليم: {fmt_time_str(report.get('submission_time'))}"
     )
 
     # Try sending document
@@ -192,7 +193,7 @@ async def safe_send_report(bot, chat_id: int, report: dict, idx: int) -> None:
         try:
             await bot.send_document(
                 chat_id=chat_id,
-                document=report["file_id"],
+                document=report.get("file_id"),
                 caption=caption,
             )
             # Add a small delay between successful sends to avoid hitting limits
@@ -203,16 +204,16 @@ async def safe_send_report(bot, chat_id: int, report: dict, idx: int) -> None:
             await asyncio.sleep(exc.retry_after + 0.5)
             continue
         except Exception as exc:
-            logger.error("Failed to send document for report #%s (%s): %s", idx, report["full_name"], exc)
+            logger.error("Failed to send document for report #%s (%s): %s", idx, report.get("full_name"), exc)
             break  # Break to proceed to fallback text
 
     # Fallback to text message if document sending failed
     fallback_text = (
         f"التقرير رقم {idx}\n"
-        f"الاسم: {report['full_name']}\n"
-        + college_str +
-        f"القسم: {report['department']}\n"
-        f"وقت التسليم: {fmt_time_str(report['submission_time'])}\n\n"
+        f"الاسم: {report.get('full_name', '')}\n"
+        + college_str
+        + dept_str
+        + f"وقت التسليم: {fmt_time_str(report.get('submission_time'))}\n\n"
         f"(ملاحظة: تعذر إرسال الملف المرفق)"
     )
 
