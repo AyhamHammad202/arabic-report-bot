@@ -13,10 +13,12 @@ Navigation:
 """
 
 import logging
+import asyncio
 
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
+from aiogram.exceptions import TelegramRetryAfter
 
 from config import ADMIN_ID, ALL_DEPARTMENTS, SUPER_ADMIN_ID
 from database import get_all_reports, get_all_departments, get_reports_by_department, get_stats
@@ -167,6 +169,72 @@ async def reply_view_all(message: Message) -> None:
 
 
 # ──────────────────────────────────────────────
+# Safe Send Helper (Handles Flood Limits & Timeouts)
+# ──────────────────────────────────────────────
+
+async def safe_send_report(bot, chat_id: int, report: dict, idx: int) -> None:
+    """
+    Safely send a student report to the admin.
+    Handles rate limits (TelegramRetryAfter) by sleeping and retrying.
+    Handles bad file IDs by falling back to a text message.
+    """
+    college_str = f"الكلية: {report['college']}\n" if "college" in report else ""
+    caption = (
+        f"التقرير رقم {idx}\n"
+        f"الاسم: {report['full_name']}\n"
+        + college_str +
+        f"القسم: {report['department']}\n"
+        f"وقت التسليم: {fmt_time_str(report['submission_time'])}"
+    )
+
+    # Try sending document
+    for attempt in range(3):
+        try:
+            await bot.send_document(
+                chat_id=chat_id,
+                document=report["file_id"],
+                caption=caption,
+            )
+            # Add a small delay between successful sends to avoid hitting limits
+            await asyncio.sleep(0.35)
+            return
+        except TelegramRetryAfter as exc:
+            logger.warning("Rate limit hit on send_document. Sleeping for %s seconds.", exc.retry_after)
+            await asyncio.sleep(exc.retry_after + 0.5)
+            continue
+        except Exception as exc:
+            logger.error("Failed to send document for report #%s (%s): %s", idx, report["full_name"], exc)
+            break  # Break to proceed to fallback text
+
+    # Fallback to text message if document sending failed
+    fallback_text = (
+        f"التقرير رقم {idx}\n"
+        f"الاسم: {report['full_name']}\n"
+        + college_str +
+        f"القسم: {report['department']}\n"
+        f"وقت التسليم: {fmt_time_str(report['submission_time'])}\n\n"
+        f"(ملاحظة: تعذر إرسال الملف المرفق)"
+    )
+
+    for attempt in range(3):
+        try:
+            await bot.send_message(
+                chat_id=chat_id,
+                text=fallback_text,
+            )
+            # Add a small delay
+            await asyncio.sleep(0.35)
+            return
+        except TelegramRetryAfter as exc:
+            logger.warning("Rate limit hit on fallback send_message. Sleeping for %s seconds.", exc.retry_after)
+            await asyncio.sleep(exc.retry_after + 0.5)
+            continue
+        except Exception as exc2:
+            logger.error("Failed to send fallback message for report #%s (%s): %s", idx, report["full_name"], exc2)
+            return
+
+
+# ──────────────────────────────────────────────
 # Shared delivery functions (used by both reply & inline paths)
 # ──────────────────────────────────────────────
 
@@ -213,35 +281,7 @@ async def _deliver_all_reports(target: Message) -> None:
     )
 
     for idx, report in enumerate(reports, start=1):
-        caption = (
-            f"تقرير رقم {idx}\n"
-            f"الاسم: {report['full_name']}\n"
-            f"الكلية: {report['college']}\n"
-            f"القسم: {report['department']}\n"
-            f"وقت التسليم: {fmt_time_str(report['submission_time'])}"
-        )
-        try:
-            await target.bot.send_document(  # type: ignore[union-attr]
-                chat_id=target.chat.id,
-                document=report["file_id"],
-                caption=caption,
-                parse_mode="Markdown",
-            )
-        except Exception as exc:
-            logger.error(
-                "Failed to send report #%s (%s) to admin: %s",
-                idx, report["full_name"], exc,
-            )
-            # Fallback to text message if document fails to send (e.g. invalid file_id)
-            fallback_text = (
-                f"{caption}\n"
-                f"(ملاحظة: تعذر إرسال الملف المرفق)"
-            )
-            await target.bot.send_message(  # type: ignore[union-attr]
-                chat_id=target.chat.id,
-                text=fallback_text,
-                parse_mode="Markdown",
-            )
+        await safe_send_report(target.bot, target.chat.id, report, idx)
 
 
 async def _deliver_dept_reports(target: Message, dept_name: str) -> None:
@@ -261,33 +301,7 @@ async def _deliver_dept_reports(target: Message, dept_name: str) -> None:
     )
 
     for idx, report in enumerate(reports, start=1):
-        caption = (
-            f"تقرير رقم {idx}\n"
-            f"الاسم: {report['full_name']}\n"
-            f"وقت التسليم: {fmt_time_str(report['submission_time'])}"
-        )
-        try:
-            await target.bot.send_document(  # type: ignore[union-attr]
-                chat_id=target.chat.id,
-                document=report["file_id"],
-                caption=caption,
-                parse_mode="Markdown",
-            )
-        except Exception as exc:
-            logger.error(
-                "Failed to send report #%s (%s) to admin: %s",
-                idx, report["full_name"], exc,
-            )
-            # Fallback to text message
-            fallback_text = (
-                f"{caption}\n"
-                f"(ملاحظة: تعذر إرسال الملف المرفق)"
-            )
-            await target.bot.send_message(  # type: ignore[union-attr]
-                chat_id=target.chat.id,
-                text=fallback_text,
-                parse_mode="Markdown",
-            )
+        await safe_send_report(target.bot, target.chat.id, report, idx)
 
 
 # ──────────────────────────────────────────────
@@ -366,33 +380,7 @@ async def cb_view_department_reports(callback: CallbackQuery) -> None:
     )
 
     for idx, report in enumerate(reports, start=1):
-        caption = (
-            f"تقرير رقم {idx}\n"
-            f"الاسم: {report['full_name']}\n"
-            f"وقت التسليم: {fmt_time_str(report['submission_time'])}"
-        )
-        try:
-            await callback.message.bot.send_document(  # type: ignore[union-attr]
-                chat_id=callback.from_user.id,
-                document=report["file_id"],
-                caption=caption,
-                parse_mode="Markdown",
-            )
-        except Exception as exc:
-            logger.error(
-                "Failed to send report #%s (%s) to admin: %s",
-                idx, report["full_name"], exc,
-            )
-            # Fallback to text message
-            fallback_text = (
-                f"{caption}\n"
-                f"(ملاحظة: تعذر إرسال الملف المرفق)"
-            )
-            await callback.message.bot.send_message(  # type: ignore[union-attr]
-                chat_id=callback.from_user.id,
-                text=fallback_text,
-                parse_mode="Markdown",
-            )
+        await safe_send_report(callback.message.bot, callback.from_user.id, report, idx)
 
     await callback.answer(text=f"تم جلب تقارير قسم {dept_name}")
 
