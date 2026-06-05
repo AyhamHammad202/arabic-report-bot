@@ -153,14 +153,30 @@ def superadmin_main_keyboard() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def students_delete_keyboard(students: list[dict]) -> InlineKeyboardMarkup:
+# Maximum students shown per page in list/delete keyboards
+PAGE_SIZE = 20
+
+
+def students_delete_keyboard(
+    students: list[dict],
+    page: int = 0,
+) -> InlineKeyboardMarkup:
     """
-    Build an inline keyboard listing every student as a deletable row.
-    Each button shows:  اسم الطالب | القسم
+    Paginated inline keyboard for the delete flow.
+    Each button shows:  اسم الطالب — القسم
     Callback: sa_del_ask_{submission_id}
+    Navigation callbacks: sa_del_page_{page}
     """
+    total = len(students)
+    total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
+    page = max(0, min(page, total_pages - 1))
+
+    start = page * PAGE_SIZE
+    end = start + PAGE_SIZE
+    page_students = students[start:end]
+
     builder = InlineKeyboardBuilder()
-    for student in students:
+    for student in page_students:
         label = f"{student['full_name']}  —  {student['department']}"
         builder.row(
             InlineKeyboardButton(
@@ -168,20 +184,51 @@ def students_delete_keyboard(students: list[dict]) -> InlineKeyboardMarkup:
                 callback_data=f"sa_del_ask_{student['id']}",
             )
         )
+
+    # ── Pagination row ──
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(
+            InlineKeyboardButton(text="السابق", callback_data=f"sa_del_page_{page - 1}")
+        )
+    nav_buttons.append(
+        InlineKeyboardButton(
+            text=f"صفحة {page + 1} من {total_pages}",
+            callback_data="sa_noop",
+        )
+    )
+    if page < total_pages - 1:
+        nav_buttons.append(
+            InlineKeyboardButton(text="التالي", callback_data=f"sa_del_page_{page + 1}")
+        )
+    builder.row(*nav_buttons)
+
     builder.row(
         InlineKeyboardButton(text="إلغاء", callback_data="sa_cancel")
     )
     return builder.as_markup()
 
 
-def students_list_keyboard(students: list[dict]) -> InlineKeyboardMarkup:
+def students_list_keyboard(
+    students: list[dict],
+    page: int = 0,
+) -> InlineKeyboardMarkup:
     """
-    Build an inline keyboard listing every student for the view-details flow.
+    Paginated inline keyboard for the view-details flow.
     Each button shows:  اسم الطالب — القسم
     Callback: sa_view_{submission_id}
+    Navigation callbacks: sa_list_page_{page}
     """
+    total = len(students)
+    total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
+    page = max(0, min(page, total_pages - 1))
+
+    start = page * PAGE_SIZE
+    end = start + PAGE_SIZE
+    page_students = students[start:end]
+
     builder = InlineKeyboardBuilder()
-    for student in students:
+    for student in page_students:
         label = f"{student['full_name']}  —  {student['department']}"
         builder.row(
             InlineKeyboardButton(
@@ -189,6 +236,25 @@ def students_list_keyboard(students: list[dict]) -> InlineKeyboardMarkup:
                 callback_data=f"sa_view_{student['id']}",
             )
         )
+
+    # ── Pagination row ──
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(
+            InlineKeyboardButton(text="السابق", callback_data=f"sa_list_page_{page - 1}")
+        )
+    nav_buttons.append(
+        InlineKeyboardButton(
+            text=f"صفحة {page + 1} من {total_pages}",
+            callback_data="sa_noop",
+        )
+    )
+    if page < total_pages - 1:
+        nav_buttons.append(
+            InlineKeyboardButton(text="التالي", callback_data=f"sa_list_page_{page + 1}")
+        )
+    builder.row(*nav_buttons)
+
     builder.row(
         InlineKeyboardButton(text="إلغاء", callback_data="sa_cancel")
     )

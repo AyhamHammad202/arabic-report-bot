@@ -93,7 +93,7 @@ async def cb_sa_list_students(callback: CallbackQuery) -> None:
     await callback.message.answer(  # type: ignore[union-attr]
         f"*قائمة الطلاب المسجّلين* — الإجمالي: *{len(students)}* طالب\n"
         "_اضغط على اسم أي طالب لعرض تفاصيله كاملة:_",
-        reply_markup=students_list_keyboard(students),
+        reply_markup=students_list_keyboard(students, page=0),
         parse_mode="Markdown",
     )
     await callback.answer(text="تم جلب قائمة الطلاب")
@@ -179,7 +179,7 @@ async def cb_sa_delete_one(callback: CallbackQuery) -> None:
         f"*اختر الطالب الذي تريد حذف تقريره:*\n"
         f"_(سيتم إخطاره بإمكانية إعادة التسليم)_\n\n"
         f"العدد الكلي: *{len(students)}* طالب",
-        reply_markup=students_delete_keyboard(students),
+        reply_markup=students_delete_keyboard(students, page=0),
         parse_mode="Markdown",
     )
     await callback.answer(text="تم فتح قائمة حذف التقارير")
@@ -344,6 +344,64 @@ async def cb_sa_delete_all_exec(callback: CallbackQuery) -> None:
     )
     logger.warning("Superadmin wiped all %s submissions.", count)
     await callback.answer(text="تم مسح كافة البيانات بنجاح")
+
+
+# ──────────────────────────────────────────────
+# CALLBACK: sa_list_page_{n} — navigate list pages
+# ──────────────────────────────────────────────
+
+@router.callback_query(F.data.startswith("sa_list_page_"))
+async def cb_sa_list_page(callback: CallbackQuery) -> None:
+    """Navigate to a different page of the student list keyboard."""
+    if not _is_superadmin(callback.from_user.id):
+        await callback.answer("غير مسموح.", show_alert=True)
+        return
+
+    try:
+        page = int(callback.data.split("_")[-1])
+    except ValueError:
+        await callback.answer("رقم صفحة غير صالح.", show_alert=True)
+        return
+
+    students = await get_all_students_brief()
+    await callback.message.edit_reply_markup(  # type: ignore[union-attr]
+        reply_markup=students_list_keyboard(students, page=page)
+    )
+    await callback.answer(text=f"الصفحة {page + 1}")
+
+
+# ──────────────────────────────────────────────
+# CALLBACK: sa_del_page_{n} — navigate delete-list pages
+# ──────────────────────────────────────────────
+
+@router.callback_query(F.data.startswith("sa_del_page_"))
+async def cb_sa_del_page(callback: CallbackQuery) -> None:
+    """Navigate to a different page of the delete-student keyboard."""
+    if not _is_superadmin(callback.from_user.id):
+        await callback.answer("غير مسموح.", show_alert=True)
+        return
+
+    try:
+        page = int(callback.data.split("_")[-1])
+    except ValueError:
+        await callback.answer("رقم صفحة غير صالح.", show_alert=True)
+        return
+
+    students = await get_all_students_brief()
+    await callback.message.edit_reply_markup(  # type: ignore[union-attr]
+        reply_markup=students_delete_keyboard(students, page=page)
+    )
+    await callback.answer(text=f"الصفحة {page + 1}")
+
+
+# ──────────────────────────────────────────────
+# CALLBACK: sa_noop — do-nothing (page counter button)
+# ──────────────────────────────────────────────
+
+@router.callback_query(F.data == "sa_noop")
+async def cb_sa_noop(callback: CallbackQuery) -> None:
+    """No-op handler for the page-indicator button in paginated keyboards."""
+    await callback.answer()
 
 
 # ──────────────────────────────────────────────
